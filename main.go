@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -30,19 +31,47 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("Gopher Adventure Json parsed")
 }
 
 func main() {
+	log.Println("Waiting")
 	http.HandleFunc("/", handler)
-	http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	arc, err := getStory(r.URL.Path[1:])
+	urlPath := r.URL.Path[1:]
+	arc, err := getStory(urlPath)
 	if err != nil {
-		fmt.Fprintf(w, fmt.Sprintf("<html><body>%v</body></html>", err.Error()))
+		t, innerErr := template.ParseFiles("error.html")
+		if innerErr != nil {
+			log.Fatal(innerErr.Error())
+		}
+		innerErr = t.Execute(w, nil)
+		if innerErr != nil {
+			log.Fatal(err.Error())
+		}
+		log.Printf("Rendered error page, story arc '%s' does not exist", urlPath)
+
 	} else {
-		fmt.Fprintf(w, fmt.Sprintf("<html><body>title:%s<br>story:%v<br>options:%v</body></html>", arc.Title, arc.Text, arc.Options))
+
+		t, err := template.ParseFiles("index.html")
+		if err != nil {
+			log.Fatal(err.Error())
+		} else {
+			data := make(map[string]interface{})
+			data["arc"] = arc
+			err := t.Execute(w, data)
+			if err != nil {
+				log.Fatal(err.Error())
+			} else {
+				log.Printf("Rendered story arc '%s'", arc.Title)
+			}
+		}
 	}
 }
 
