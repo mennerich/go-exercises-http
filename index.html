@@ -1,0 +1,12 @@
+<html>
+    <body>
+        <h3>{{ entry.title }}</h3>
+        {{ range $paragraph := .entries.Story }}
+            <p>$paragraph</p>
+        {{ end }}
+        {{ range $option := .entries.Options }}
+            <a href="/$option.Arc">$option.Text</a>
+        {{ end }}
+    </body>
+</html>
+
